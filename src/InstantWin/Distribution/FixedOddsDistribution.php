@@ -2,15 +2,19 @@
 
 namespace InstantWin\Distribution;
 
+use OutOfRangeException;
+use RangeException;
+use UnexpectedValueException;
+
 /**
  * Defines distribution logic for awarding wins by using fixed odds. This will not attempt
  * to spread the wins evenly over a time period.
  *
  * @author Konr Ness <konrness@gmail.com>
+ * @author Nazariy Slyusarchuk <ns@leobit.co>
  */
 class FixedOddsDistribution extends AbstractDistribution
 {
-
     /**
      * @var float
      */
@@ -19,13 +23,13 @@ class FixedOddsDistribution extends AbstractDistribution
     /**
      * Get the odds for a single play at this moment in time
      *
-     * @return float Number from 0.000 to 0.999
-     * @throws \Exception if odds are not set
+     * @return float Number from 0.0001 to 0.9999
+     * @throws \RangeException if odds are not set
      */
-    public function getOdds()
+    public function getOdds(): float
     {
-        if (null === $this->_odds) {
-            throw new Exception("Odds not set");
+        if ($this->_odds === null) {
+            throw new RangeException('Odds not set');
         }
 
         return $this->_odds;
@@ -36,19 +40,32 @@ class FixedOddsDistribution extends AbstractDistribution
      *
      * @param float|double $odds
      * @return $this
-     * @throws \UnexpectedValueException
+     * @throws OutOfRangeException
+     * @throws UnexpectedValueException
      */
-    public function setOdds($odds)
+    public function setOdds(float $odds): self
     {
-        if (! is_numeric($odds)) {
-            throw new \UnexpectedValueException("Odds expected to be float. " . gettype($odds) . " provided.");
+        if (!is_numeric($odds)) {
+            throw new UnexpectedValueException(
+                sprintf(
+                    'Odds expected to be float. %s provided.',
+                    \gettype($odds)
+                )
+            );
         }
 
         if ($odds > 1 || $odds < 0) {
-            throw new \UnexpectedValueException("Odds expected to be between 0.00 and 0.999");
+            throw new OutOfRangeException(
+                sprintf(
+                    'Odds expected to be between %f and %f',
+                    self::MIN_ODDS,
+                    self::MAX_ODDS
+                )
+            );
         }
 
-        $this->_odds = (float) $odds;
+        $this->_odds = $odds;
+
         return $this;
     }
 }

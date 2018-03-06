@@ -2,7 +2,13 @@
 
 namespace InstantWin;
 
+use RuntimeException;
 
+/**
+ * Class TimePeriod
+ * @package InstantWin
+ * @author Nazariy Slyusarchuk <ns@leobit.co>
+ */
 class TimePeriod
 {
 
@@ -25,12 +31,13 @@ class TimePeriod
      *
      * @var int|null
      */
-    protected $currentTimestamp = null;
+    protected $currentTimestamp;
 
     /**
      * @return float
+     * @throws \Exception
      */
-    public function getCompletion()
+    public function getCompletion(): float
     {
         // force completion to be greater than 0
         return max(1, $this->getCurrentTimestamp() - $this->getStartTimestamp()) / $this->getDuration();
@@ -40,20 +47,20 @@ class TimePeriod
      * @param int $endTimestamp
      * @return $this;
      */
-    public function setEndTimestamp($endTimestamp)
+    public function setEndTimestamp(int $endTimestamp): self
     {
         $this->endTimestamp = $endTimestamp;
         return $this;
     }
 
     /**
-     * @throws \Exception
+     * @throws RuntimeException
      * @return int
      */
-    public function getEndTimestamp()
+    public function getEndTimestamp(): int
     {
         if (!$this->endTimestamp) {
-            throw new \Exception("EndTimestamp not set");
+            throw new RuntimeException('EndTimestamp not set');
         }
         return $this->endTimestamp;
     }
@@ -62,7 +69,7 @@ class TimePeriod
      * @param int $startTimestamp
      * @return $this;
      */
-    public function setStartTimestamp($startTimestamp)
+    public function setStartTimestamp($startTimestamp): self
     {
         $this->startTimestamp = $startTimestamp;
         return $this;
@@ -72,10 +79,10 @@ class TimePeriod
      * @throws \Exception
      * @return int
      */
-    public function getStartTimestamp()
+    public function getStartTimestamp(): int
     {
         if (!$this->startTimestamp) {
-            throw new \Exception("StartTimestamp not set");
+            throw new RuntimeException('StartTimestamp not set');
         }
         return $this->startTimestamp;
     }
@@ -84,7 +91,7 @@ class TimePeriod
      * @param int $currentTimestamp
      * @return $this;
      */
-    public function setCurrentTimestamp($currentTimestamp)
+    public function setCurrentTimestamp($currentTimestamp): self
     {
         $this->currentTimestamp = $currentTimestamp;
         return $this;
@@ -93,7 +100,7 @@ class TimePeriod
     /**
      * @return int
      */
-    public function getCurrentTimestamp()
+    public function getCurrentTimestamp(): int
     {
         if (null === $this->currentTimestamp) {
             return time();
@@ -102,12 +109,11 @@ class TimePeriod
         return $this->currentTimestamp;
     }
 
-
-
     /**
      * @return int
+     * @throws \Exception
      */
-    protected function getDuration()
+    protected function getDuration(): int
     {
         return $this->getEndTimestamp() - $this->getStartTimestamp();
     }

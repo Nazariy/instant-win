@@ -3,19 +3,19 @@
 namespace InstantWin\Distribution;
 
 use InstantWin\TimePeriod;
+use RangeException;
 
 /**
  * Defines distribution logic for spreading wins evenly over a time period when
  * the number of total plays in the time period can not be known.
  *
  * @author Konr Ness <konrness@gmail.com>
+ * @author Nazariy Slyusarchuk <ns@leobit.co>
  */
 class EvenOverTimeDistribution extends AbstractDistribution implements
     TimePeriodAwareInterface,
     WinAmountAwareInterface
 {
-    const MIN_ODDS = 0.00001;
-
     /**
      * @var TimePeriod
      */
@@ -39,28 +39,41 @@ class EvenOverTimeDistribution extends AbstractDistribution implements
     /**
      * Get the odds for a single play at this moment in time
      *
-     * @return float Number from 0.000 to 0.999
+     * @return float Number from 0.00001 to 0.99999
+     * @throws \Exception
      */
-    public function getOdds()
+    public function getOdds(): float
     {
         // determine percentage of wins awarded
         $timePercentage = $this->getTimePeriod()->getCompletion();
 
         $desiredWinCount = $timePercentage * $this->getMaxWinCount();
+        $playCount = $this->getPlayCount();
 
         // this assumes a linear distribution of plays throughout the day
-        $estimatedRemainingPlays = ($this->getPlayCount() / $timePercentage) - $this->getPlayCount();
-        $estimatedRemainingPlays = max(1, $estimatedRemainingPlays);
+        $estimatedRemainingPlays = max(1, ($playCount / $timePercentage) - $playCount);
 
         return ($desiredWinCount - $this->getCurrentWinCount()) / $estimatedRemainingPlays * 5;
 
     }
 
     /**
+     * @throws RangeException
+     * @return \InstantWin\TimePeriod
+     */
+    public function getTimePeriod(): TimePeriod
+    {
+        if (!$this->timePeriod) {
+            throw new RangeException('TimePeriod not set');
+        }
+        return $this->timePeriod;
+    }
+
+    /**
      * @param TimePeriod $timePeriod
      * @return $this
      */
-    public function setTimePeriod($timePeriod)
+    public function setTimePeriod(TimePeriod $timePeriod): AbstractDistribution
     {
         $this->timePeriod = $timePeriod;
         return $this;
@@ -68,63 +81,23 @@ class EvenOverTimeDistribution extends AbstractDistribution implements
 
     /**
      * @throws \Exception
-     * @return \InstantWin\TimePeriod
-     */
-    public function getTimePeriod()
-    {
-        if (!$this->timePeriod) {
-            throw new \Exception("TimePeriod not set");
-        }
-        return $this->timePeriod;
-    }
-
-    /**
-     * @param int $currentWinCount
-     */
-    public function setCurrentWinCount($currentWinCount)
-    {
-        $this->currentWinCount = $currentWinCount;
-    }
-
-    /**
-     * @param int $maxWinCount
-     */
-    public function setMaxWinCount($maxWinCount)
-    {
-        $this->maxWinCount = $maxWinCount;
-    }
-
-    /**
-     * @throws \Exception
      * @return int
      */
-    public function getCurrentWinCount()
-    {
-        if (null === $this->currentWinCount) {
-            throw new \Exception("CurrentWinCount not set");
-        }
-        return $this->currentWinCount;
-    }
-
-    /**
-     * @throws \Exception
-     * @return int
-     */
-    public function getMaxWinCount()
+    public function getMaxWinCount(): int
     {
         if (null === $this->maxWinCount) {
-            throw new \Exception("MaxWinCount not set");
+            throw new RangeException('MaxWinCount not set');
         }
         return $this->maxWinCount;
     }
 
     /**
-     * @param int $playCount
-     * @return $this;
+     * @param int $maxWinCount
+     * @return $this
      */
-    public function setPlayCount($playCount)
+    public function setMaxWinCount(int $maxWinCount): AbstractDistribution
     {
-        $this->playCount = $playCount;
+        $this->maxWinCount = $maxWinCount;
         return $this;
     }
 
@@ -132,11 +105,43 @@ class EvenOverTimeDistribution extends AbstractDistribution implements
      * @throws \Exception
      * @return int
      */
-    public function getPlayCount()
+    public function getPlayCount(): int
     {
         if (null === $this->playCount) {
-            throw new \Exception("PlayCount not set");
+            throw new RangeException('PlayCount not set');
         }
         return $this->playCount;
+    }
+
+    /**
+     * @param int $playCount
+     * @return $this;
+     */
+    public function setPlayCount(int $playCount): AbstractDistribution
+    {
+        $this->playCount = $playCount;
+        return $this;
+    }
+
+    /**
+     * @throws RangeException
+     * @return int
+     */
+    public function getCurrentWinCount(): int
+    {
+        if (null === $this->currentWinCount) {
+            throw new RangeException('CurrentWinCount not set');
+        }
+        return $this->currentWinCount;
+    }
+
+    /**
+     * @param int $currentWinCount
+     * @return $this
+     */
+    public function setCurrentWinCount(int $currentWinCount): AbstractDistribution
+    {
+        $this->currentWinCount = $currentWinCount;
+        return $this;
     }
 }

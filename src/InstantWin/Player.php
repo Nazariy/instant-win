@@ -2,18 +2,21 @@
 
 namespace InstantWin;
 
-use InstantWin\Distribution\AbstractDistribution;
-use InstantWin\Distribution\TimePeriodAwareInterface;
-use InstantWin\Distribution\WinAmountAwareInterface;
+use InstantWin\Distribution\{
+    AbstractDistribution,
+    TimePeriodAwareInterface,
+    WinAmountAwareInterface
+};
+use RangeException;
 
 /**
  * Allows for executing a play on an instant-win game
  *
  * @author Konr Ness <konrness@gmail.com>
+ * @author Nazariy Slyusarchuk <ns@leobit.co>
  */
 class Player
 {
-
     /**
      * @var AbstractDistribution
      */
@@ -49,53 +52,51 @@ class Player
      * Execute one instant-win play and decide if player is a winner
      *
      * @return boolean true = win; false = lose
+     * @throws \Exception
      */
-    public function isWinner()
+    public function isWinner(): bool
     {
         if ($this->getCurWins() >= $this->getMaxWins()) {
             return false;
         }
-
-        if ($this->getDistribution() instanceof TimePeriodAwareInterface) {
-
-            /** @var TimePeriodAwareInterface $distribution */
-            $distribution = $this->getDistribution();
-
-            $distribution->setTimePeriod($this->getTimePeriod());
+        $distribution = $this->getDistribution();
+        switch(true){
+            case $distribution instanceof TimePeriodAwareInterface:
+                /** @var TimePeriodAwareInterface $distribution */
+                $distribution->setTimePeriod($this->getTimePeriod());
+                break;
+            case $distribution instanceof WinAmountAwareInterface:
+                /** @var WinAmountAwareInterface $distribution */
+                $distribution->setCurrentWinCount($this->getCurWins());
+                $distribution->setMaxWinCount($this->getMaxWins());
+                $distribution->setPlayCount($this->getPlayCount());
+                break;
         }
 
-        if ($this->getDistribution() instanceof WinAmountAwareInterface) {
-            /** @var WinAmountAwareInterface $distribution */
-            $distribution = $this->getDistribution();
+        $odds = $distribution->getOdds();
 
-            $distribution->setCurrentWinCount($this->getCurWins());
-            $distribution->setMaxWinCount($this->getMaxWins());
-            $distribution->setPlayCount($this->getPlayCount());
-        }
-
-        $odds = $this->getDistribution()->getOdds();
-        
         return $this->generateRandomFloat() <= $odds;
     }
 
     /**
-     * @param \InstantWin\Distribution\AbstractDistribution $distribution
+     * @param AbstractDistribution $distribution
      * @return $this;
      */
-    public function setDistribution($distribution)
+    public function setDistribution(AbstractDistribution $distribution): self
     {
         $this->distribution = $distribution;
+
         return $this;
     }
 
     /**
      * @throws \Exception
-     * @return \InstantWin\Distribution\AbstractDistribution
+     * @return AbstractDistribution
      */
-    public function getDistribution()
+    public function getDistribution(): AbstractDistribution
     {
         if (!$this->distribution) {
-            throw new \Exception("Distribution not set");
+            throw new RangeException('Distribution not set');
         }
         return $this->distribution;
     }
@@ -104,7 +105,7 @@ class Player
      * @param \InstantWin\TimePeriod $timePeriod
      * @return $this;
      */
-    public function setTimePeriod($timePeriod)
+    public function setTimePeriod(TimePeriod $timePeriod): self
     {
         $this->timePeriod = $timePeriod;
         return $this;
@@ -114,10 +115,10 @@ class Player
      * @throws \Exception
      * @return \InstantWin\TimePeriod
      */
-    public function getTimePeriod()
+    public function getTimePeriod(): TimePeriod
     {
         if (!$this->timePeriod) {
-            throw new \Exception("TimePeriod not set");
+            throw new RangeException('TimePeriod not set');
         }
         return $this->timePeriod;
     }
@@ -126,7 +127,7 @@ class Player
      * @param int $curWins
      * @return $this;
      */
-    public function setCurWins($curWins)
+    public function setCurWins(int $curWins): self
     {
         $this->curWins = $curWins;
         return $this;
@@ -136,10 +137,10 @@ class Player
      * @throws \Exception
      * @return int
      */
-    public function getCurWins()
+    public function getCurWins(): int
     {
         if (null === $this->curWins) {
-            throw new \Exception("CurWins not set");
+            throw new RangeException('CurWins not set');
         }
         return $this->curWins;
     }
@@ -148,7 +149,7 @@ class Player
      * @param int $maxWins
      * @return $this;
      */
-    public function setMaxWins($maxWins)
+    public function setMaxWins($maxWins): self
     {
         $this->maxWins = $maxWins;
         return $this;
@@ -158,10 +159,10 @@ class Player
      * @throws \Exception
      * @return int
      */
-    public function getMaxWins()
+    public function getMaxWins(): int
     {
         if (!$this->maxWins) {
-            throw new \Exception("MaxWins not set");
+            throw new RangeException('MaxWins not set');
         }
         return $this->maxWins;
     }
@@ -170,7 +171,7 @@ class Player
      * @param int $playCount
      * @return $this;
      */
-    public function setPlayCount($playCount)
+    public function setPlayCount($playCount): self
     {
         $this->playCount = $playCount;
         return $this;
@@ -180,15 +181,13 @@ class Player
      * @throws \Exception
      * @return int
      */
-    public function getPlayCount()
+    public function getPlayCount(): int
     {
         if (null === $this->playCount) {
-            throw new \Exception("PlayCount not set");
+            throw new RangeException('PlayCount not set');
         }
         return $this->playCount;
     }
-
-
 
 
     /**
@@ -196,8 +195,8 @@ class Player
      *
      * @return float
      */
-    private function generateRandomFloat()
+    private function generateRandomFloat(): float
     {
-        return mt_rand(0, 1000000) / 1000000;
+        return mt_rand() / mt_getrandmax();
     }
 }

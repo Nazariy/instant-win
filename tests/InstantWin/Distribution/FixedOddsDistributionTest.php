@@ -21,7 +21,7 @@ class FixedOddsDistributionTest extends \PHPUnit_Framework_TestCase {
     {
         $dist = new FixedOddsDistribution();
 
-        $dist->setOdds("foo");
+        $dist->setOdds('foo');
     }
 
     /**
